@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>November 2026 - STATIC ANALYSIS</title>
+<style>
+  :root{--bg:#f6f5f1;--ink:#1d2330;--mut:#6b7280;--line:#c9c5b8;--cell:#fff;--word:#dbe7ff;--act:#ffe08a;--ok:#1f7a45;--bad:#b3261e;--blk:#1d2330}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:20px 16px 40px}
+  h1{font-size:1.4rem;margin:0}
+  .sub{color:var(--mut);margin:2px 0 14px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  button{font:inherit;padding:7px 14px;border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:6px;cursor:pointer}
+  button:hover{background:var(--ink);color:#fff}
+  .main{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+  #grid{display:grid;gap:0;border:2px solid var(--blk);background:var(--blk);touch-action:manipulation}
+  .c{position:relative;width:var(--sz);height:var(--sz);background:var(--blk)}
+  .c.l{background:var(--cell);border:1px solid var(--line)}
+  .c.w{background:var(--word)}
+  .c.a{background:var(--act)}
+  .c.ok input{color:var(--ok)}
+  .c.bad input{color:var(--bad);background:#fde8e6}
+  .c input{width:100%;height:100%;border:0;background:transparent;text-align:center;font:600 calc(var(--sz)*.55)/1 system-ui,sans-serif;text-transform:uppercase;color:var(--ink);padding:0;caret-color:transparent;cursor:pointer;outline:none;border-radius:0}
+  .n{position:absolute;top:1px;left:3px;font-size:calc(var(--sz)*.26);color:var(--mut);pointer-events:none;line-height:1}
+  .clues{flex:1;min-width:240px;display:flex;gap:24px;flex-wrap:wrap}
+  .clues div{flex:1;min-width:210px}
+  h2{font-size:1rem;margin:0 0 6px;border-bottom:2px solid var(--ink);padding-bottom:3px}
+  ol{list-style:none;margin:0;padding:0}
+  li{padding:4px 6px;border-radius:5px;cursor:pointer;font-size:.93rem}
+  li b{display:inline-block;min-width:1.7em}
+  li:hover{background:#ebe9e0}
+  li.cur{background:var(--act)}
+  li.done{color:var(--mut);text-decoration:line-through}
+  #msg{margin:12px 0 0;font-weight:600;min-height:1.4em}
+  .good{color:var(--ok)}
+  .cur-clue{margin:0 0 12px;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:6px;min-height:2.4em}
+  #timer{font:700 1.3rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;padding:6px 12px;background:#fff;border:1px solid var(--ink);border-radius:6px;min-width:5.2em;text-align:center}
+  #timer.run{background:var(--act)}
+  #timer.won{background:#d7f2e1;border-color:var(--ok);color:var(--ok)}
+  .stage{position:relative}
+  #overlay{position:absolute;inset:-6px;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(246,245,241,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:10px;text-align:center;padding:16px}
+  #overlay[hidden]{display:none}
+  #overlay p{margin:0 0 14px;color:var(--mut)}
+  #overlay .go{font-size:1.2rem;padding:12px 34px;background:var(--ink);color:#fff}
+  #overlay .go:hover{background:#34405a}
+  #result{margin:14px 0 0;padding:14px 16px;background:#fff;border:2px solid var(--ok);border-radius:8px}
+  #result[hidden]{display:none}
+  #result h3{margin:0 0 4px;font-size:1.15rem;color:var(--ok)}
+  #result p{margin:0 0 10px}
+  #result .row{display:flex;gap:8px;flex-wrap:wrap}
+  #fallback{display:block;width:100%;margin-top:10px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;resize:none}
+  #fallback[hidden]{display:none}
+  #copied{color:var(--ok);font-weight:600;margin-left:4px;align-self:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SE Careers November Crossword Puzzle - STATIC ANALYSIS</h1>
+  <p class="sub">Structural analysis · November 2026</p>
+  <div class="bar">
+    <span id="timer" aria-live="off">00:00</span>
+    <button id="check">Check</button>
+    <button id="hint">Reveal letter (+15s)</button>
+    <button id="reveal">Reveal all</button>
+    <button id="clear">Restart</button>
+    <button id="invite">Invite others</button>
+  </div>
+  <div class="cur-clue" id="cur"></div>
+  <div class="stage">
+    <div class="main" id="game" inert>
+      <div id="grid" role="grid" aria-label="Crossword grid"></div>
+      <div class="clues">
+        <div><h2>Across</h2><ol id="across"></ol></div>
+        <div><h2>Down</h2><ol id="down"></ol></div>
+      </div>
+    </div>
+    <div id="overlay">
+      <div>
+        <p>10 words on statics. The clock starts when you press Start<br>and stops when the last letter is correct.</p>
+        <button class="go" id="start">Start</button>
+      </div>
+    </div>
+  </div>
+  <p id="msg"></p>
+  <div id="result" hidden>
+    <h3 id="resTitle"></h3>
+    <p id="resSub"></p>
+    <div class="row">
+      <button id="shareRes">Share Results</button>
+      <span id="copied"></span>
+    </div>
+  </div>
+  <textarea id="fallback" rows="3" readonly hidden></textarea>
+</div>
+<script>
+const SOL=['.C..ARM..','LOAD.O...','.U...LINK','.PIN.L.O.','.L...E.D.','VECTOR.E.','...I.....','MOMENT...'];
+const CL={
+ A:{2:'Perpendicular distance from a force to a point, as in "moment ___" (3)',4:'Force applied to a structure, such as dead or live (4)',5:'Displacement constraint between two nodes as in "rigid ____" (4)',7:'Support type that allows rotation but not translation (3)',8:'Quantity with both magnitude and direction (6)',10:'Force × perpendicular distance (6)'},
+ D:{1:'Pair of equal, opposite, non-collinear forces (6)',3:'Support that allows horizontal movement but resists vertical movement (6)',6:'Joint in a truss where members meet (4)',9:'Structural member that primarily resists axial tension (typically oppose a strut) (3)'}
+};
+const H=SOL.length,W=SOL[0].length;
+const L=(r,c)=>r>=0&&c>=0&&r<H&&c<W&&SOL[r][c]!=='.';
+const num={},words={A:{},D:{}},cellWords={};
+let k=0;
+for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+  if(!L(r,c))continue;
+  const a=!L(r,c-1)&&L(r,c+1), d=!L(r-1,c)&&L(r+1,c);
+  if(a||d){k++;num[r+','+c]=k;}
+  if(a){const cells=[];for(let x=c;L(r,x);x++)cells.push([r,x]);words.A[k]=cells;}
+  if(d){const cells=[];for(let y=r;L(y,c);y++)cells.push([y,c]);words.D[k]=cells;}
+}
+for(const dir of['A','D'])for(const n in words[dir])for(const [r,c] of words[dir][n]){(cellWords[r+','+c]??={})[dir]=n;}
+
+const grid=document.getElementById('grid');
+const sz=Math.max(34,Math.min(52,Math.floor((Math.min(window.innerWidth,980)-40)/W)));
+grid.style.setProperty('--sz',sz+'px');
+grid.style.gridTemplateColumns=`repeat(${W},${sz}px)`;
+const el={};
+for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+  const d=document.createElement('div');d.className='c';
+  if(L(r,c)){
+    d.classList.add('l');
+    const i=document.createElement('input');i.maxLength=1;i.autocomplete='off';i.autocapitalize='characters';i.spellcheck=false;i.setAttribute('aria-label',`row ${r+1} column ${c+1}`);
+    i.dataset.r=r;i.dataset.c=c;d.appendChild(i);
+    if(num[r+','+c]){const n=document.createElement('span');n.className='n';n.textContent=num[r+','+c];d.appendChild(n);}
+    el[r+','+c]={div:d,inp:i};
+  }
+  grid.appendChild(d);
+}
+for(const dir of['A','D']){
+  const ol=document.getElementById(dir==='A'?'across':'down');
+  for(const n in CL[dir]){const li=document.createElement('li');li.innerHTML=`<b>${n}.</b>${CL[dir][n]}`;li.dataset.d=dir;li.dataset.n=n;li.onclick=()=>{select(words[dir][n][0],dir);};ol.appendChild(li);}
+}
+
+let cur=null,dir='A';
+const key=(r,c)=>r+','+c;
+function curWord(){const w=cellWords[key(...cur)];if(!w)return null;if(!w[dir])dir=dir==='A'?'D':'A';return{dir,n:w[dir],cells:words[dir][w[dir]]};}
+function select(pos,d){
+  cur=pos;if(d)dir=d;
+  const w=curWord();
+  document.querySelectorAll('.c.w,.c.a').forEach(x=>x.classList.remove('w','a'));
+  document.querySelectorAll('li.cur').forEach(x=>x.classList.remove('cur'));
+  if(!w)return;
+  w.cells.forEach(([r,c])=>el[key(r,c)].div.classList.add('w'));
+  el[key(...cur)].div.classList.add('a');
+  const li=document.querySelector(`li[data-d="${w.dir}"][data-n="${w.n}"]`);li.classList.add('cur');
+  document.getElementById('cur').innerHTML=`<b>${w.n} ${w.dir==='A'?'Across':'Down'}:</b> ${CL[w.dir][w.n]}`;
+  el[key(...cur)].inp.focus();el[key(...cur)].inp.select();
+}
+function step(dr,dc){
+  let r=cur[0]+dr,c=cur[1]+dc;
+  while(r>=0&&c>=0&&r<H&&c<W){if(L(r,c)){select([r,c]);return;}r+=dr;c+=dc;}
+}
+function nextInWord(back){
+  const w=curWord();const i=w.cells.findIndex(([r,c])=>r===cur[0]&&c===cur[1]);
+  const j=i+(back?-1:1);
+  if(j>=0&&j<w.cells.length)select(w.cells[j]);
+}
+function nextWord(back){
+  const order=[];for(const d of['A','D'])for(const n of Object.keys(words[d]).map(Number).sort((a,b)=>a-b))order.push([d,n]);
+  const w=curWord();let i=order.findIndex(([d,n])=>d===w.dir&&n==w.n);
+  i=(i+(back?-1:1)+order.length)%order.length;
+  select(words[order[i][0]][order[i][1]][0],order[i][0]);
+}
+grid.addEventListener('focusin',e=>{});
+grid.addEventListener('mousedown',e=>{
+  const inp=e.target.closest('input');if(!inp)return;e.preventDefault();
+  const pos=[+inp.dataset.r,+inp.dataset.c];
+  if(cur&&cur[0]===pos[0]&&cur[1]===pos[1]){const w=cellWords[key(...pos)];const o=dir==='A'?'D':'A';if(w[o])dir=o;}
+  else{const w=cellWords[key(...pos)];if(!w[dir])dir=dir==='A'?'D':'A';}
+  select(pos);
+});
+grid.addEventListener('keydown',e=>{
+  const inp=e.target;if(inp.tagName!=='INPUT')return;
+  const k=e.key;
+  if(k==='ArrowRight'){e.preventDefault();dir='A';step(0,1);}
+  else if(k==='ArrowLeft'){e.preventDefault();dir='A';step(0,-1);}
+  else if(k==='ArrowDown'){e.preventDefault();dir='D';step(1,0);}
+  else if(k==='ArrowUp'){e.preventDefault();dir='D';step(-1,0);}
+  else if(k==='Tab'){e.preventDefault();nextWord(e.shiftKey);}
+  else if(k===' '||k==='Enter'){e.preventDefault();const w=cellWords[key(...cur)];const o=dir==='A'?'D':'A';if(w[o]){dir=o;select(cur);}}
+  else if(k==='Backspace'){e.preventDefault();clearMark(cur);if(inp.value){inp.value='';}else{nextInWord(true);const i2=el[key(...cur)].inp;i2.value='';}updateDone();}
+  else if(k==='Delete'){e.preventDefault();inp.value='';clearMark(cur);updateDone();}
+  else if(/^[a-zA-Z]$/.test(k)&&!e.ctrlKey&&!e.metaKey){
+    e.preventDefault();inp.value=k.toUpperCase();clearMark(cur);nextInWord(false);updateDone();finishCheck();
+  }
+});
+// mobile soft keyboards: handle input event fallback
+grid.addEventListener('input',e=>{
+  const inp=e.target;const v=inp.value.replace(/[^a-zA-Z]/g,'').slice(-1).toUpperCase();inp.value=v;
+  if(v){clearMark([+inp.dataset.r,+inp.dataset.c]);nextInWord(false);}
+  updateDone();finishCheck();
+});
+function clearMark(p){const d=el[key(...p)].div;d.classList.remove('ok','bad');}
+function val(r,c){return el[key(r,c)].inp.value.toUpperCase();}
+function updateDone(){
+  document.querySelectorAll('li').forEach(li=>{
+    const cells=words[li.dataset.d][li.dataset.n];
+    li.classList.toggle('done',cells.every(([r,c])=>val(r,c)===SOL[r][c]));
+  });
+}
+function allFilled(){return Object.values(el).every(o=>o.inp.value);}
+function allCorrect(){for(const k in el){const [r,c]=k.split(',').map(Number);if(val(r,c)!==SOL[r][c])return false;}return true;}
+const msg=document.getElementById('msg');
+function finishCheck(){
+  if(allFilled()){
+    if(allCorrect()){msg.className='good';msg.textContent='Solved! All 10 words are correct.';win();}
+    else{msg.className='';msg.textContent='Grid is full but some letters are wrong. Press Check to see which.';}
+  }else msg.textContent='';
+}
+/* ---- timer, sharing ---- */
+const URL_PUZZLE='https://claude.ai/artifact/6HquHWLVYwKmqGZ9uwH3oC';
+const timerEl=document.getElementById('timer'),game=document.getElementById('game'),overlay=document.getElementById('overlay');
+const result=document.getElementById('result'),fallback=document.getElementById('fallback'),copiedEl=document.getElementById('copied');
+let t0=0,penalty=0,tick=null,running=false,finalMs=0;
+const elapsed=()=>Date.now()-t0+penalty;
+function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function stopTimer(){clearInterval(tick);tick=null;running=false;}
+function startGame(){
+  penalty=0;t0=Date.now();running=true;
+  overlay.hidden=true;game.inert=false;result.hidden=true;fallback.hidden=true;
+  timerEl.className='run';timerEl.textContent='00:00';
+  tick=setInterval(()=>{timerEl.textContent=fmt(elapsed());},250);
+  select(words.A[2][0],'A');
+}
+function win(){
+  if(!running)return;
+  finalMs=elapsed();stopTimer();
+  timerEl.className='won';timerEl.textContent=fmt(finalMs);
+  document.getElementById('resTitle').textContent='Solved in '+fmt(finalMs)+'!';
+  document.getElementById('resSub').textContent=penalty?`Includes a ${penalty/1000}s penalty for revealed letters.`:'No letters revealed.';
+  result.hidden=false;result.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+async function copyText(text){
+  copiedEl.textContent='';fallback.hidden=true;
+  try{await navigator.clipboard.writeText(text);copiedEl.textContent='Copied!';setTimeout(()=>{copiedEl.textContent='';},2500);}
+  catch(e){fallback.value=text;fallback.hidden=false;fallback.focus();fallback.select();copiedEl.textContent='Press Ctrl/Cmd+C to copy';}
+}
+const resultText=()=>`I solved the Statics Crossword (Nov 2026) in ${fmt(finalMs)}! Can you beat my time? ${URL_PUZZLE}`;
+const inviteText=()=>`Try this structural engineering crossword on statics. Press Start and see how fast you can solve it: ${URL_PUZZLE}`;
+document.getElementById('start').onclick=startGame;
+const PUZZLE_SUBJECT='Statics';
+const mailSubject=()=>`SE Careers Crossword Puzzle - ${new Date().toLocaleString('en-US',{month:'long'})} - ${PUZZLE_SUBJECT}`;
+document.getElementById('shareRes').onclick=async()=>{
+  const subject=mailSubject(),body=resultText();
+  await copyText(body);
+  fallback.value=`Subject: ${subject}\n\n${body}`;fallback.hidden=false;
+  copiedEl.textContent='Attempting to opening your email app. If nothing opens, paste the text below into a new email.';
+  const a=document.createElement('a');
+  a.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  document.body.appendChild(a);a.click();a.remove();
+};
+document.getElementById('invite').onclick=async()=>{
+  const b=document.getElementById('invite');
+  try{await navigator.clipboard.writeText(inviteText());const o=b.textContent;b.textContent='Invite copied!';setTimeout(()=>{b.textContent=o;},2000);}
+  catch(e){msg.className='';msg.textContent='Could not copy automatically. Share this link: '+URL_PUZZLE;}
+};
+document.getElementById('check').onclick=()=>{
+  let wrong=0,empty=0;
+  for(const k in el){const [r,c]=k.split(',').map(Number);const v=val(r,c);const d=el[k].div;d.classList.remove('ok','bad');
+    if(!v){empty++;continue;}
+    if(v===SOL[r][c])d.classList.add('ok');else{d.classList.add('bad');wrong++;}}
+  msg.className=wrong||empty?'':'good';
+  msg.textContent=wrong?`${wrong} letter${wrong>1?'s are':' is'} incorrect (red).`:empty?`No mistakes so far. ${empty} cell${empty>1?'s':''} left.`:'Solved! All 10 words are correct.';
+};
+document.getElementById('hint').onclick=()=>{
+  if(!cur||!running)return;const [r,c]=cur;
+  if(val(r,c)!==SOL[r][c])penalty+=15000;
+  el[key(r,c)].inp.value=SOL[r][c];el[key(r,c)].div.classList.remove('bad');el[key(r,c)].div.classList.add('ok');
+  timerEl.textContent=fmt(elapsed());updateDone();finishCheck();
+};
+document.getElementById('reveal').onclick=()=>{
+  if(!running&&timerEl.className!=='won'&&!cur)return;
+  const wasWon=timerEl.className==='won';
+  stopTimer();
+  for(const k in el){const [r,c]=k.split(',').map(Number);el[k].inp.value=SOL[r][c];el[k].div.classList.remove('bad');el[k].div.classList.add('ok');}
+  updateDone();
+  if(!wasWon){timerEl.className='';msg.className='';msg.textContent='Answers revealed. No time recorded; press Restart to try again.';}
+};
+document.getElementById('clear').onclick=()=>{
+  stopTimer();
+  for(const k in el){el[k].inp.value='';el[k].div.classList.remove('ok','bad','w','a');}
+  document.querySelectorAll('.c.w,.c.a').forEach(x=>x.classList.remove('w','a'));
+  updateDone();msg.textContent='';result.hidden=true;fallback.hidden=true;finalMs=0;cur=null;
+  document.getElementById('cur').innerHTML='';
+  timerEl.className='';timerEl.textContent='00:00';
+  game.inert=true;overlay.hidden=false;
+};
+</script>
+</body>
+</html>
