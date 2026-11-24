@@ -57,15 +57,15 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>SE Careers November Crossword Puzzle - STATIC ANALYSIS</h1>
-  <p class="sub">Structural analysis · November 2026</p>
+  <h1>November 2026</h1>
+  <!-- <p class="sub">Structural analysis · November 2026</p> -->
   <div class="bar">
     <span id="timer" aria-live="off">00:00</span>
     <button id="check">Check</button>
     <button id="hint">Reveal letter (+15s)</button>
     <button id="reveal">Reveal all</button>
     <button id="clear">Restart</button>
-    <button id="invite">Invite others</button>
+    <button id="invite">Share..</button>
   </div>
   <div class="cur-clue" id="cur"></div>
   <div class="stage">
@@ -238,8 +238,8 @@ async function copyText(text){
   try{await navigator.clipboard.writeText(text);copiedEl.textContent='Copied!';setTimeout(()=>{copiedEl.textContent='';},2500);}
   catch(e){fallback.value=text;fallback.hidden=false;fallback.focus();fallback.select();copiedEl.textContent='Press Ctrl/Cmd+C to copy';}
 }
-const resultText=()=>`I solved the Statics Crossword (Nov 2026) in ${fmt(finalMs)}! Can you beat my time? ${URL_PUZZLE}`;
-const inviteText=()=>`Try this structural engineering crossword on statics. Press Start and see how fast you can solve it: ${URL_PUZZLE}`;
+const resultText=()=>`I solved the SE Careers Crossword (STATICS Nov 2026) in ${fmt(finalMs)}! Can you beat my time? ${URL_PUZZLE}`;
+const inviteText=()=>`Try this crossword on STATIC ANALYSIS. Press Start and see how fast you can solve it: ${URL_PUZZLE}`;
 document.getElementById('start').onclick=startGame;
 const PUZZLE_SUBJECT='Statics';
 const mailSubject=()=>`SE Careers Crossword Puzzle - ${new Date().toLocaleString('en-US',{month:'long'})} - ${PUZZLE_SUBJECT}`;
@@ -254,7 +254,7 @@ document.getElementById('shareRes').onclick=async()=>{
 };
 document.getElementById('invite').onclick=async()=>{
   const b=document.getElementById('invite');
-  try{await navigator.clipboard.writeText(inviteText());const o=b.textContent;b.textContent='Invite copied!';setTimeout(()=>{b.textContent=o;},2000);}
+  try{await navigator.clipboard.writeText(inviteText());const o=b.textContent;b.textContent='Invitation copied!';setTimeout(()=>{b.textContent=o;},2000);}
   catch(e){msg.className='';msg.textContent='Could not copy automatically. Share this link: '+URL_PUZZLE;}
 };
 document.getElementById('check').onclick=()=>{
