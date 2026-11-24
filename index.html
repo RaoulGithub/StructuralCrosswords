@@ -78,7 +78,7 @@
     </div>
     <div id="overlay">
       <div>
-        <p>10 words on statics. The clock starts when you press Start<br>and stops when the last letter is correct.</p>
+        <p>The clock starts when you press Start<br>and stops when the last letter is correct.</p>
         <button class="go" id="start">Start</button>
       </div>
     </div>
@@ -239,9 +239,9 @@ async function copyText(text){
   catch(e){fallback.value=text;fallback.hidden=false;fallback.focus();fallback.select();copiedEl.textContent='Press Ctrl/Cmd+C to copy';}
 }
 const resultText=()=>`I solved the SE Careers Crossword (STATICS Nov 2026) in ${fmt(finalMs)}! Can you beat my time? ${URL_PUZZLE}`;
-const inviteText=()=>`Try this crossword on STATIC ANALYSIS. Press Start and see how fast you can solve it: ${URL_PUZZLE}`;
+const inviteText=()=>`Try this crossword about STATIC ANALYSIS terms. Press Start and see how fast you can solve it: ${URL_PUZZLE}`;
 document.getElementById('start').onclick=startGame;
-const PUZZLE_SUBJECT='Statics';
+const PUZZLE_SUBJECT='STATICS';
 const mailSubject=()=>`SE Careers Crossword Puzzle - ${new Date().toLocaleString('en-US',{month:'long'})} - ${PUZZLE_SUBJECT}`;
 document.getElementById('shareRes').onclick=async()=>{
   const subject=mailSubject(),body=resultText();
@@ -252,11 +252,25 @@ document.getElementById('shareRes').onclick=async()=>{
   a.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
   document.body.appendChild(a);a.click();a.remove();
 };
-document.getElementById('invite').onclick=async()=>{
+<!--
+  document.getElementById('invite').onclick=async()=>{
   const b=document.getElementById('invite');
   try{await navigator.clipboard.writeText(inviteText());const o=b.textContent;b.textContent='Invitation copied!';setTimeout(()=>{b.textContent=o;},2000);}
   catch(e){msg.className='';msg.textContent='Could not copy automatically. Share this link: '+URL_PUZZLE;}
 };
+-->
+const resultText2=()=>`I enjoyed playing SE Careers Structrual Crossword with words about STATICS, want to try? ${URL_PUZZLE}`;
+const inviteText2=()=>`Try this crossword about STATIC ANALYSIS terms. Press Start and see how fast you can solve it: ${URL_PUZZLE}`;
+document.getElementById('invite').onclick=async()=>{
+  const subject=mailSubject(),body=resultText2();
+  await copyText(body);
+  fallback.value=`Subject: ${subject}\n\n${body}`;fallback.hidden=false;
+  copiedEl.textContent='Attempting to opening your email app. If nothing opens, paste the text below into a new email.';
+  const a=document.createElement('a');
+  a.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  document.body.appendChild(a);a.click();a.remove();
+};
+
 document.getElementById('check').onclick=()=>{
   let wrong=0,empty=0;
   for(const k in el){const [r,c]=k.split(',').map(Number);const v=val(r,c);const d=el[k].div;d.classList.remove('ok','bad');
